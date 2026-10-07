@@ -2,13 +2,14 @@
 
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Sparkles, RefreshCw, AlertCircle, Key, Eye } from 'lucide-react';
+import { ArrowLeft, Sparkles, RefreshCw, AlertCircle, Key } from 'lucide-react';
 import { ClarifyingQuestionsUI } from '@/components/generate/clarifying-questions';
 import { LinkedInPreview } from '@/components/previews/linkedin-preview';
 import { TwitterPreview } from '@/components/previews/twitter-preview';
 import { RedditPreview } from '@/components/previews/reddit-preview';
 import { MediumPreview } from '@/components/previews/medium-preview';
 import { VisibilityTipsCard } from '@/components/generate/visibility-tips';
+import { ByokModal } from '@/components/byok-modal';
 import { ClarifyingQuestion } from '@/lib/llm/clarify';
 import { GeneratedContent } from '@/lib/db/schema';
 
@@ -24,9 +25,9 @@ export default function GenerateFlowPage({
   const [questions, setQuestions] = useState<ClarifyingQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [generatedItems, setGeneratedItems] = useState<GeneratedContent[]>([]);
-  const [viewMode, setViewMode] = useState<'preview' | 'raw'>('preview');
   const [error, setError] = useState('');
   const [rateLimitError, setRateLimitError] = useState(false);
+  const [isByokModalOpen, setIsByokModalOpen] = useState(false);
 
   // 1. Initial Context Evaluation
   useEffect(() => {
@@ -84,6 +85,7 @@ export default function GenerateFlowPage({
 
       if (res.status === 429 || data.code === 'RATE_LIMIT_EXHAUSTED') {
         setRateLimitError(true);
+        setIsByokModalOpen(true);
         setStep('results');
         return;
       }
@@ -98,6 +100,12 @@ export default function GenerateFlowPage({
       setError(err.message);
       setStep('results');
     }
+  };
+
+  const handleSaveByokKey = (provider: 'gemini' | 'groq', key: string) => {
+    localStorage.setItem(`shipfolio_${provider}_key`, key);
+    // Instantly retry generation with user key
+    startGeneration(answers);
   };
 
   const renderPreviewForPlatform = (item: GeneratedContent) => {
@@ -117,6 +125,13 @@ export default function GenerateFlowPage({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Interactive BYOK Modal */}
+      <ByokModal
+        isOpen={isByokModalOpen}
+        onClose={() => setIsByokModalOpen(false)}
+        onSaveKey={handleSaveByokKey}
+      />
+
       {/* Header */}
       <div>
         <Link
@@ -166,7 +181,7 @@ export default function GenerateFlowPage({
         </div>
       )}
 
-      {/* BYOK Modal Alert */}
+      {/* Rate Limit Alert */}
       {rateLimitError && (
         <div className="apple-card p-6 border-orange-500/30 bg-orange-500/5 space-y-4">
           <div className="flex items-start gap-3">
@@ -176,23 +191,23 @@ export default function GenerateFlowPage({
                 Shared Free Credits Exhausted
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                Admin LLM API keys hit their daily rate limit. Bring your own free API key (Gemini or Groq) in Settings to continue generating content!
+                Admin LLM API keys hit their daily rate limit. Bring your own free API key (Gemini or Groq) to continue generating unlimited content.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3 pt-2">
-            <Link
-              href="/settings"
+            <button
+              onClick={() => setIsByokModalOpen(true)}
               className="apple-button inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-orange-600 text-white text-xs font-semibold shadow-sm hover:bg-orange-500"
             >
               <Key className="w-3.5 h-3.5" />
-              <span>Configure BYOK Key in Settings</span>
-            </Link>
+              <span>Bring Your Own API Key</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* Results View with Platform Previews & Visibility Tips */}
+      {/* Results View */}
       {step === 'results' && generatedItems.length > 0 && (
         <div className="space-y-8">
           <div className="flex items-center justify-between">
@@ -211,10 +226,7 @@ export default function GenerateFlowPage({
           <div className="space-y-8">
             {generatedItems.map((item) => (
               <div key={item.id} className="space-y-3">
-                {/* Platform Preview Card */}
                 {renderPreviewForPlatform(item)}
-
-                {/* Post-Generation Visibility Tips */}
                 <VisibilityTipsCard
                   platform={item.platform as 'linkedin' | 'twitter' | 'reddit' | 'medium'}
                   hasMedia={(item.mediaUrls || []).length > 0}
