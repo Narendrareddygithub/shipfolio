@@ -9,7 +9,7 @@ export async function callGroq(params: {
   const groq = new Groq({ apiKey: params.apiKey });
   const modelName = params.model || 'llama-3.3-70b-versatile';
 
-  const chatCompletion = await groq.chatCompletions.create({
+  const chatCompletion = await groq.chat.completions.create({
     messages: [
       { role: 'system', content: params.systemPrompt },
       { role: 'user', content: params.userPrompt },

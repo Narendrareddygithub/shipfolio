@@ -2,8 +2,13 @@
 
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Sparkles, RefreshCw, Copy, Check, AlertCircle, Key } from 'lucide-react';
+import { ArrowLeft, Sparkles, RefreshCw, AlertCircle, Key, Eye } from 'lucide-react';
 import { ClarifyingQuestionsUI } from '@/components/generate/clarifying-questions';
+import { LinkedInPreview } from '@/components/previews/linkedin-preview';
+import { TwitterPreview } from '@/components/previews/twitter-preview';
+import { RedditPreview } from '@/components/previews/reddit-preview';
+import { MediumPreview } from '@/components/previews/medium-preview';
+import { VisibilityTipsCard } from '@/components/generate/visibility-tips';
 import { ClarifyingQuestion } from '@/lib/llm/clarify';
 import { GeneratedContent } from '@/lib/db/schema';
 
@@ -19,7 +24,7 @@ export default function GenerateFlowPage({
   const [questions, setQuestions] = useState<ClarifyingQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [generatedItems, setGeneratedItems] = useState<GeneratedContent[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'preview' | 'raw'>('preview');
   const [error, setError] = useState('');
   const [rateLimitError, setRateLimitError] = useState(false);
 
@@ -38,7 +43,6 @@ export default function GenerateFlowPage({
           setQuestions(data.questions);
           setStep('questions');
         } else {
-          // Context is sufficient -> proceed directly to generation
           startGeneration({});
         }
       } catch (err) {
@@ -96,15 +100,24 @@ export default function GenerateFlowPage({
     }
   };
 
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const renderPreviewForPlatform = (item: GeneratedContent) => {
+    switch (item.platform) {
+      case 'linkedin':
+        return <LinkedInPreview content={item.content} mediaUrls={item.mediaUrls || []} />;
+      case 'twitter':
+        return <TwitterPreview content={item.content} mediaUrls={item.mediaUrls || []} />;
+      case 'reddit':
+        return <RedditPreview content={item.content} />;
+      case 'medium':
+        return <MediumPreview content={item.content} />;
+      default:
+        return <div className="p-4 bg-zinc-900 text-white rounded-xl text-xs">{item.content}</div>;
+    }
   };
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Navigation Header */}
+      {/* Header */}
       <div>
         <Link
           href={`/projects/${projectId}`}
@@ -121,7 +134,7 @@ export default function GenerateFlowPage({
         </p>
       </div>
 
-      {/* Evaluating Loading State */}
+      {/* Loading Steps */}
       {step === 'evaluating' && (
         <div className="apple-card p-12 text-center space-y-4">
           <div className="w-10 h-10 rounded-full border-2 border-blue-600 border-t-transparent animate-spin mx-auto" />
@@ -131,7 +144,6 @@ export default function GenerateFlowPage({
         </div>
       )}
 
-      {/* Step 2: Conversational Clarifying Questions */}
       {step === 'questions' && (
         <ClarifyingQuestionsUI
           questions={questions}
@@ -140,7 +152,6 @@ export default function GenerateFlowPage({
         />
       )}
 
-      {/* Step 3: Generating Loading State */}
       {step === 'generating' && (
         <div className="apple-card p-12 text-center space-y-4">
           <div className="w-10 h-10 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin mx-auto" />
@@ -155,7 +166,7 @@ export default function GenerateFlowPage({
         </div>
       )}
 
-      {/* Step 4: Rate Limit BYOK Modal */}
+      {/* BYOK Modal Alert */}
       {rateLimitError && (
         <div className="apple-card p-6 border-orange-500/30 bg-orange-500/5 space-y-4">
           <div className="flex items-start gap-3">
@@ -165,7 +176,7 @@ export default function GenerateFlowPage({
                 Shared Free Credits Exhausted
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                Admin LLM API keys hit their daily rate limit. Bring your own free API key (Gemini or Groq) in Settings to continue generating unlimited content!
+                Admin LLM API keys hit their daily rate limit. Bring your own free API key (Gemini or Groq) in Settings to continue generating content!
               </p>
             </div>
           </div>
@@ -181,12 +192,12 @@ export default function GenerateFlowPage({
         </div>
       )}
 
-      {/* Step 5: Results View */}
+      {/* Results View with Platform Previews & Visibility Tips */}
       {step === 'results' && generatedItems.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold apple-heading text-zinc-900 dark:text-white">
-              Generated Platform Content ({generatedItems.length})
+              Platform Outputs ({generatedItems.length})
             </h3>
             <button
               onClick={() => startGeneration(answers)}
@@ -197,41 +208,17 @@ export default function GenerateFlowPage({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-8">
             {generatedItems.map((item) => (
-              <div key={item.id} className="apple-card p-6 space-y-4 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
-                      {item.platform}
-                    </span>
-                    <button
-                      onClick={() => handleCopy(item.id, item.content)}
-                      className="apple-button inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-white/50 dark:bg-zinc-900/50 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/5"
-                    >
-                      {copiedId === item.id ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-green-500" />
-                          <span className="text-green-500 font-semibold">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+              <div key={item.id} className="space-y-3">
+                {/* Platform Preview Card */}
+                {renderPreviewForPlatform(item)}
 
-                  <div className="p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-mono whitespace-pre-line max-h-60 overflow-y-auto">
-                    {item.content}
-                  </div>
-                </div>
-
-                <div className="text-[11px] text-zinc-400 flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
-                  <span>Model: {item.llmModel || 'Gemini 3.1 Flash-Lite'}</span>
-                  <span>ASD-STE100 Verified</span>
-                </div>
+                {/* Post-Generation Visibility Tips */}
+                <VisibilityTipsCard
+                  platform={item.platform as 'linkedin' | 'twitter' | 'reddit' | 'medium'}
+                  hasMedia={(item.mediaUrls || []).length > 0}
+                />
               </div>
             ))}
           </div>
