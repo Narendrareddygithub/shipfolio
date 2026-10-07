@@ -1,4 +1,5 @@
 import { Sidebar } from '@/components/layout/sidebar';
+import { GuestConversionBanner } from '@/components/auth/guest-conversion-banner';
 
 export default function DashboardLayout({
   children,
@@ -8,7 +9,10 @@ export default function DashboardLayout({
   return (
     <div className="max-w-7xl mx-auto flex min-h-[calc(100vh-4rem)]">
       <Sidebar />
-      <div className="flex-1 p-6 md:p-8 lg:p-10 max-w-5xl">{children}</div>
+      <div className="flex-1 p-6 md:p-8 lg:p-10 max-w-5xl">
+        <GuestConversionBanner />
+        {children}
+      </div>
     </div>
   );
 }
