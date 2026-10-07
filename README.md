@@ -6,6 +6,8 @@
 
 *A visibility-first platform that transforms developer project context, updates, and screenshots into platform-native content for LinkedIn, X (Twitter), Reddit, and Medium — driven by Gemini 3.1 Flash-Lite, Groq, and ASD-STE100 quality rules.*
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-shipfolio--ten.vercel.app-000000?style=for-the-badge&logo=vercel)](https://shipfolio-ten.vercel.app)
+
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
