@@ -49,7 +49,7 @@ export async function generateWithLLM(req: LLMRequest): Promise<LLMResponse> {
         systemPrompt: req.systemPrompt,
         userPrompt: req.userPrompt,
       });
-      return { content, provider: 'gemini', model: 'gemini-1.5-flash' };
+      return { content, provider: 'gemini', model: 'gemini-2.0-flash' };
     } catch (err: any) {
       console.warn('Gemini primary rate-limited or failed, cascading to Groq:', err.message);
       errors.push(`Gemini: ${err.message}`);
@@ -65,7 +65,7 @@ export async function generateWithLLM(req: LLMRequest): Promise<LLMResponse> {
         systemPrompt: req.systemPrompt,
         userPrompt: req.userPrompt,
       });
-      return { content, provider: 'groq', model: 'llama-3.3-70b-versatile' };
+      return { content, provider: 'groq', model: 'llama-3.1-8b-instant' };
     } catch (err: any) {
       console.warn('Groq fallback failed:', err.message);
       errors.push(`Groq: ${err.message}`);
