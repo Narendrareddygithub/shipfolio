@@ -7,9 +7,9 @@ export async function callGemini(params: {
   userPrompt: string;
 }): Promise<string> {
   const genAI = new GoogleGenerativeAI(params.apiKey);
-  // Default to gemini-2.0-flash, fallback to gemini-1.5-flash-latest
-  const modelName = params.model || 'gemini-2.0-flash';
-  
+  // Requested model: gemini-3.1-flash-lite
+  const modelName = params.model || 'gemini-3.1-flash-lite';
+
   try {
     const model = genAI.getGenerativeModel({
       model: modelName,
@@ -20,9 +20,9 @@ export async function callGemini(params: {
     const text = response.response.text();
     if (text) return text;
   } catch (err: any) {
-    console.warn(`Gemini model ${modelName} failed, trying gemini-1.5-flash-latest:`, err.message);
+    console.warn(`Gemini model ${modelName} failed, trying fallback model:`, err.message);
     const fallbackModel = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-2.0-flash',
       systemInstruction: params.systemPrompt,
     });
     const fallbackResponse = await fallbackModel.generateContent(params.userPrompt);

@@ -7,7 +7,8 @@ export async function callGroq(params: {
   userPrompt: string;
 }): Promise<string> {
   const groq = new Groq({ apiKey: params.apiKey });
-  const primaryModel = params.model || 'llama-3.1-8b-instant';
+  // Requested model: GPT-OSS-20B
+  const primaryModel = params.model || 'openai/gpt-oss-20b';
 
   try {
     const chatCompletion = await groq.chat.completions.create({
@@ -22,13 +23,13 @@ export async function callGroq(params: {
     const content = chatCompletion.choices[0]?.message?.content;
     if (content) return content;
   } catch (err: any) {
-    console.warn(`Groq model ${primaryModel} failed, trying mixtral-8x7b-32768:`, err.message);
+    console.warn(`Groq model ${primaryModel} failed, trying fallback model GPT-OSS-20B:`, err.message);
     const fallbackCompletion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: params.systemPrompt },
         { role: 'user', content: params.userPrompt },
       ],
-      model: 'mixtral-8x7b-32768',
+      model: 'gpt-oss-20b',
       temperature: 0.7,
     });
     const fallbackContent = fallbackCompletion.choices[0]?.message?.content;
