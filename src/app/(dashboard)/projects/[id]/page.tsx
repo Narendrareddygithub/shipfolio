@@ -30,7 +30,7 @@ export default function ProjectDetailPage({
         setContents(data.contents || []);
       } catch (err: any) {
         setError(err.message);
-      } font-finally {
+      } finally {
         setLoading(false);
       }
     }

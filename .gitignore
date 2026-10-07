@@ -36,3 +36,5 @@ next-env.d.ts
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
